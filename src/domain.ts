@@ -133,8 +133,10 @@ type Attempt = {
   at: number;
 };
 export type Room = {
+  absence?: { id: string; revision: number; periodId: string };
   items?: PracticeItem[];
   lesson?: {
+    classroomId?: string;
     title: string;
     objective: string;
     grade: number;
@@ -489,7 +491,7 @@ export function closeRoom(r: Room): Handoff {
     messages: structuredClone(snap.messages),
     narrative: `${snap.students.length} seats practiced ${r.lesson?.objective ?? "adding and subtracting fractions"}. ${snap.correct} items were solved correctly across ${snap.attempts} attempts. ${snap.students.filter((s) => s.status === "needs-help").length} seats need a follow-up. Simulated seats are labeled individually.`,
     delivery:
-      "Draft only · One not connected; no email or calendar event sent.",
+      "Saved in this classroom. Automatic email requires a linked absence and configured report recipients.",
   };
   return r.report;
 }

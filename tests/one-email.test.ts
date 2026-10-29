@@ -68,3 +68,34 @@ describe("One email delivery", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });
+
+it("automatic report delivery sends only reports and honors explicit report settings", async () => {
+  const r = record(true);
+  r.reportDelivery = {
+    teacherEmail: "owner@example.com",
+    administratorEmail: "",
+    enabled: true,
+  };
+  r.outbox.push({
+    id: "day",
+    type: "day-report",
+    recipient: "owner@example.com",
+    subject: "Day summary",
+    text: "Recorded progress",
+    status: "awaiting_connection",
+    createdAt: new Date().toISOString(),
+  });
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ email: { sent: true, messageId: "report-id" } }),
+    );
+  await deliverOutbox(r, env, async () => {}, fetcher, "day-report");
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(r.outbox[0].status).toBe("sandbox");
+  expect(r.outbox[1].status).toBe("sent");
+  r.reportDelivery.enabled = false;
+  await expect(
+    deliverOutbox(r, env, async () => {}, fetcher, "day-report"),
+  ).rejects.toThrow(/Sandbox/);
+});

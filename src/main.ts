@@ -22,7 +22,12 @@ type Seat = {
 };
 type Snapshot = {
   lesson?: Room["lesson"] | null;
-  integrations?: { you: boolean; parasail: boolean };
+  integrations?: {
+    you: boolean;
+    parasail: boolean;
+    crewai: boolean;
+    one: boolean;
+  };
   phase: string;
   createdAt: number;
   students: Seat[];
@@ -144,7 +149,7 @@ async function dashboard() {
     app.innerHTML = `${header()}<main class="welcome"><h1>This is the room’s<br><em>teacher view.</em></h1><p>Open this link in the browser that created the room,<br>or join as a student below.</p><a class="primary" href="/student?room=${esc(roomId)}">Join practice ↗</a></main>`;
     return;
   }
-  app.innerHTML = `${header()}<div class="workspace"><aside class="sidebar"><div class="sidebar-label">YOUR WORKSPACE</div><a class="nav active" href="/?room=${esc(roomId)}"><span>▦</span> Live classroom <i></i></a><button class="nav" id="handoff-nav"><span>↗</span> Teacher handoff</button><div class="sidebar-bottom"><div class="mini-book">A good day,<br><em>even on an away day.</em></div><span class="sidebar-label">SUPERSUBSTITUTE / DEMO 01</span></div></aside><main class="dashboard"><div class="page-heading"><div><div class="eyebrow">SUBSTITUTE WORKSPACE <span>/</span> ROOM 05</div><h1>A day of progress<span class="brand-dot">.</span></h1><p>Keep the room moving. We’ll help you see where to step in.</p></div><div class="period"><span class="live-dot"></span><span id="phase">Period in progress</span><small id="elapsed"></small></div></div><div class="lesson-bar"><span class="lesson-icon">½</span><div><strong>Fractions, one step at a time</strong><span>Grade 5 <b>·</b> Add & subtract mixed numbers <b>·</b> CA 5.NF.A.1</span></div><a href="https://www.thecorestandards.org/Math/Content/5/NF/" target="_blank" rel="noopener">Reference standard ↗</a></div><div class="metrics" id="metrics"></div><div class="dashboard-grid"><div class="main-column"><section class="panel"><div class="section-heading"><div><span class="eyebrow">THE ROOM, RIGHT NOW</span><h2>Every seat has a story</h2></div><span class="muted" id="refresh-status">Updates every 2s</span></div><div class="seat-grid" id="seats"></div><div class="legend"><span><i class="dot green"></i> Making progress</span><span><i class="dot amber"></i> Could use a hand</span><span><i class="dot gray"></i> Ready to begin</span></div></section><section class="coach-section"><div class="section-heading"><div><span class="eyebrow">YOUR NEXT MOVE</span><h2>A little help goes a long way</h2></div><span class="small-tag">Rule-based coach</span></div><div id="coach"></div></section></div><div class="right-column"><section class="join-card"><span class="eyebrow">PULL UP A SEAT</span><h2>Let’s get everyone in.</h2><p>Scan the code on a phone to join this practice room.</p><div class="qr-wrap"><canvas id="qr" aria-label="QR code to join student practice"></canvas></div><a id="student-link" class="student-link" target="_blank" rel="noopener" href="/student?room=${esc(roomId)}">Open student view ↗</a><button id="copy" class="secondary">Copy join link <span>⧉</span></button><small>Seat labels only. No student names.</small></section><section class="simulation-card"><div class="section-heading"><h3>Bring the room to life</h3><span class="small-tag">SIMULATION</span></div><p>Add six demo students. Their answers use the same grading and room state as live practice.</p><button class="secondary" id="simulate">Start simulated students <span>▶</span></button></section><section class="handoff-card"><span class="eyebrow">FOR THE TEACHER</span><h3>More than “they were fine.”</h3><p>Close the period to capture progress, sticking points, and a follow-up group.</p><button class="text-button" id="close">End period & prepare handoff ↗</button></section></div></div><div class="integration-bar"><span class="eyebrow">PARTNER CONNECTIONS</span><span>You.com <i>Pending</i></span><span>Parasail <i>Pending</i></span><span>CrewAI <i>Pending</i></span><span>One <i>Pending</i></span></div><div class="footnote">Demo mode · Authored practice & hints · Reference source, not live research · No emails sent</div></main></div>${footer()}<dialog id="report-dialog"><div id="report"></div><button class="secondary" id="dismiss">Back to classroom</button></dialog>`;
+  app.innerHTML = `${header()}<div class="workspace"><aside class="sidebar"><div class="sidebar-label">YOUR WORKSPACE</div><a class="nav active" href="/?room=${esc(roomId)}"><span>▦</span> Live classroom <i></i></a><button class="nav" id="handoff-nav"><span>↗</span> Teacher handoff</button><div class="sidebar-bottom"><div class="mini-book">A good day,<br><em>even on an away day.</em></div><span class="sidebar-label">SUPERSUBSTITUTE / DEMO 01</span></div></aside><main class="dashboard"><div class="page-heading"><div><div class="eyebrow">SUBSTITUTE WORKSPACE <span>/</span> ROOM 05</div><h1>A day of progress<span class="brand-dot">.</span></h1><p>Keep the room moving. We’ll help you see where to step in.</p></div><div class="period"><span class="live-dot"></span><span id="phase">Period in progress</span><small id="elapsed"></small></div></div><div class="lesson-bar"><span class="lesson-icon">½</span><div class="lesson-meta"><strong>Fractions, one step at a time</strong><span class="lesson-description">Grade 5 <b>·</b> Add & subtract mixed numbers <b>·</b> CA 5.NF.A.1</span></div><a href="https://www.thecorestandards.org/Math/Content/5/NF/" target="_blank" rel="noopener">Reference standard ↗</a></div><div class="metrics" id="metrics"></div><div class="dashboard-grid"><div class="main-column"><section class="panel"><div class="section-heading"><div><span class="eyebrow">THE ROOM, RIGHT NOW</span><h2>Every seat has a story</h2></div><span class="muted" id="refresh-status">Updates every 2s</span></div><div class="seat-grid" id="seats"></div><div class="legend"><span><i class="dot green"></i> Making progress</span><span><i class="dot amber"></i> Could use a hand</span><span><i class="dot gray"></i> Ready to begin</span></div></section><section class="coach-section"><div class="section-heading"><div><span class="eyebrow">YOUR NEXT MOVE</span><h2>A little help goes a long way</h2></div><span class="small-tag">Rule-based coach</span></div><div id="coach"></div></section></div><div class="right-column"><section class="join-card"><span class="eyebrow">PULL UP A SEAT</span><h2>Let’s get everyone in.</h2><p>Scan the code on a phone to join this practice room.</p><div class="qr-wrap"><canvas id="qr" aria-label="QR code to join student practice"></canvas></div><a id="student-link" class="student-link" target="_blank" rel="noopener" href="/student?room=${esc(roomId)}">Open student view ↗</a><button id="copy" class="secondary">Copy join link <span>⧉</span></button><small>Seat labels only. No student names.</small></section><section class="simulation-card"><div class="section-heading"><h3>Bring the room to life</h3><span class="small-tag">SIMULATION</span></div><p>Add six demo students. Their answers use the same grading and room state as live practice.</p><button class="secondary" id="simulate">Start simulated students <span>▶</span></button></section><section class="handoff-card"><span class="eyebrow">FOR THE TEACHER</span><h3>More than “they were fine.”</h3><p>Close the period to capture progress, sticking points, and a follow-up group.</p><button class="text-button" id="close">End period & prepare handoff ↗</button></section></div></div><div class="integration-bar"><span class="eyebrow">PARTNER CONNECTIONS</span><span>You.com <i>Pending</i></span><span>Parasail <i>Pending</i></span><span>CrewAI <i>Pending</i></span><span>One <i>Pending</i></span></div><div class="footnote">Demo mode · Authored practice & hints · Reference source, not live research · No emails sent</div></main></div>${footer()}<dialog id="report-dialog"><div id="report"></div><button class="secondary" id="dismiss">Back to classroom</button></dialog>`;
   const joinURL = `${location.origin}/student?room=${roomId}`;
   document
     .querySelector(".coach-section")!
@@ -300,6 +305,9 @@ async function findVideos(topic: string) {
 }
 function renderRoom() {
   if (!snapshot) return;
+  const delivery = document.querySelector("#report-delivery");
+  if (delivery && snapshot.report)
+    delivery.textContent = snapshot.report.delivery;
   const r = snapshot,
     help = r.students.filter((s) => s.status === "needs-help").length,
     correct = r.students.reduce((n, s) => n + s.correct, 0),
@@ -307,7 +315,7 @@ function renderRoom() {
   if (r.lesson) {
     const bar = document.querySelector(".lesson-bar")!;
     bar.querySelector("strong")!.textContent = r.lesson.title;
-    bar.querySelector("div > span")!.textContent =
+    bar.querySelector(".lesson-description")!.textContent =
       `Grade ${r.lesson.grade} · ${r.lesson.objective} · ${r.lesson.standard}`;
     const source = bar.querySelector("a")!;
     source.textContent = "State guidance ↗";
@@ -326,6 +334,12 @@ function renderRoom() {
     labels[1].textContent = r.integrations.parasail
       ? "Student help ready"
       : "Pending";
+    labels[2].textContent = r.integrations.crewai
+      ? "Specialist review ready"
+      : "Not connected";
+    labels[3].textContent = r.integrations.one
+      ? "Gmail ready"
+      : "Not connected";
   }
   const inbox = document.querySelector("#student-messages")!;
   const messageMarkup = (r.messages ?? []).length
@@ -447,7 +461,7 @@ function showReport() {
         .filter((s: Seat) => s.status === "needs-help")
         .map((s: Seat) => esc(s.label))
         .join(", ") || "No students flagged at close."
-    }</p><div class="honesty">${esc(r.delivery)}</div><button id="download" class="primary">Download handoff JSON ↓</button>`;
+    }</p><div class="honesty" id="report-delivery">${esc(r.delivery)}</div><button id="download" class="primary">Download handoff JSON ↓</button>`;
   if (r.messages?.length)
     document
       .querySelector("#report .honesty")!

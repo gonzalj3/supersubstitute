@@ -38,6 +38,7 @@ export const AbsenceInputSchema = z.object({
   objective: z.string().trim().min(8).max(2000),
   curriculumRef: z.string().max(500).default(""),
   teacherQuestions: z.string().max(6000).default(""),
+  teacherEmail: z.union([z.email(), z.literal("")]).default(""),
   administratorEmail: z.union([z.email(), z.literal("")]).default(""),
   periods: z
     .array(
@@ -195,5 +196,11 @@ export type AbsenceRecord = {
   invitations: Invitation[];
   assigned?: { id: string; label: string; token: string };
   rooms: Record<string, { id: string; adminToken: string }>;
+  periodReports?: Record<string, import("./day-report").PeriodReport>;
+  reportDelivery?: {
+    teacherEmail: string;
+    administratorEmail: string;
+    enabled: boolean;
+  };
   alignmentReviewed?: boolean;
 };

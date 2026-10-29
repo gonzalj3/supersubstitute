@@ -260,7 +260,16 @@ h1 {
   padding: 15px 18px;
   margin-bottom: 23px;
 }
+.lesson-meta {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.lesson-description {
+  line-height: 1.6;
+}
 .lesson-icon {
+  flex-shrink: 0;
   width: 37px;
   height: 37px;
   display: grid;
@@ -277,7 +286,7 @@ h1 {
   font-weight: 600;
   margin-bottom: 5px;
 }
-.lesson-bar div > span {
+.lesson-meta > .lesson-description {
   display: block;
   font-size: 10px;
   color: #7b866f;
@@ -1438,7 +1447,7 @@ dialog .secondary {
   .lesson-bar strong {
     font-size: 10px;
   }
-  .lesson-bar div > span {
+  .lesson-meta > .lesson-description {
     font-size: 8px;
     line-height: 1.7;
   }

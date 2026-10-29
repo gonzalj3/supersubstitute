@@ -1,3 +1,4 @@
+import { queueDayReport } from "../src/day-report";
 import { deliverOutbox, type OneEmailEnv } from "./one-email";
 import {
   DurableObject,
@@ -93,6 +94,22 @@ export class Preparation extends DurableObject<PrepEnv> {
           await this.ctx.storage.put("record", record);
           return json({ ok: true });
         }
+        if (op === "period-complete") {
+          const linked = Object.entries(record.rooms).find(
+            ([key, room]) =>
+              key === `${record?.revision}:${data.periodId}` &&
+              room.id === data.roomId &&
+              room.adminToken === data.roomToken,
+          );
+          if (!linked || record.phase !== "published")
+            return json({ error: "Invalid classroom report link" }, 403);
+          record.periodReports ??= {};
+          record.periodReports[data.periodId] ??= data.report;
+          const complete = queueDayReport(record);
+          await this.ctx.storage.put("record", record);
+          const delivery = await this.sendDayReports(record, complete);
+          return json({ delivery });
+        }
         const auth = req.headers.get("Authorization")?.replace(/^Bearer /, ""),
           owner = auth === record.ownerToken,
           admin = auth === record.adminToken,
@@ -185,9 +202,11 @@ export class Preparation extends DurableObject<PrepEnv> {
           if (!owner && !admin) {
             view.invitations = [];
             view.outbox = [];
+            delete view.reportDelivery;
             view.input = {
               ...view.input,
               administratorEmail: "",
+              teacherEmail: "",
               substitutes: [],
             };
             view.rooms = Object.fromEntries(
@@ -219,7 +238,15 @@ export class Preparation extends DurableObject<PrepEnv> {
             ).fetch(
               new Request("https://internal/create", {
                 method: "POST",
-                body: JSON.stringify({ pack: record.pack }),
+                body: JSON.stringify({
+                  classroomId: id,
+                  pack: record.pack,
+                  absence: {
+                    id: record.id,
+                    revision: record.revision,
+                    periodId: period.id,
+                  },
+                }),
               }),
             );
             if (!created.ok)
@@ -228,13 +255,68 @@ export class Preparation extends DurableObject<PrepEnv> {
             record.rooms[key] = { id, adminToken: result.adminToken };
             await this.ctx.storage.put("record", record);
           }
-          return json(record.rooms[key]);
+          const room = record.rooms[key];
+          // Also link classrooms created before report delivery was introduced.
+          await this.env.ROOMS.get(this.env.ROOMS.idFromName(room.id)).fetch(
+            new Request("https://internal/report-link", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${room.adminToken}` },
+              body: JSON.stringify({
+                id: record.id,
+                revision: record.revision,
+                periodId: period.id,
+                classroomId: room.id,
+              }),
+            }),
+          );
+          return json(room);
         }
         if (!owner && !admin)
           return json(
             { error: "Teacher or administrator action required" },
             403,
           );
+        if (op === "report-settings") {
+          const parsed = validateInput({
+            ...record.input,
+            teacherEmail: data.teacherEmail,
+            administratorEmail: data.administratorEmail,
+          });
+          if (typeof data.enabled !== "boolean")
+            throw new Error("Choose whether to enable report emails.");
+          record.reportDelivery = {
+            teacherEmail: parsed.teacherEmail,
+            administratorEmail: parsed.administratorEmail,
+            enabled: data.enabled,
+          };
+          for (const message of record.outbox)
+            if (
+              message.type === "day-report" &&
+              message.status === "awaiting_connection"
+            )
+              message.status = "sandbox";
+          const complete = queueDayReport(record);
+          await this.ctx.storage.put("record", record);
+          // Connect previously created rooms without changing their published content.
+          for (const [key, room] of Object.entries(record.rooms)) {
+            const periodId = key.slice(key.indexOf(":") + 1);
+            await this.env.ROOMS.get(this.env.ROOMS.idFromName(room.id)).fetch(
+              new Request("https://internal/report-link", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${room.adminToken}` },
+                body: JSON.stringify({
+                  id: record.id,
+                  revision: record.revision,
+                  periodId,
+                  classroomId: room.id,
+                }),
+              }),
+            );
+          }
+          return json({
+            delivery: await this.sendDayReports(record, complete),
+          });
+        }
         if (op === "send-notices") {
           const result = await deliverOutbox(record, this.env, async () => {
             await this.ctx.storage.put("record", record);
@@ -319,6 +401,41 @@ export class Preparation extends DurableObject<PrepEnv> {
         );
       }
     });
+  }
+  private async sendDayReports(
+    record: AbsenceRecord,
+    complete: boolean,
+  ): Promise<string> {
+    if (!complete)
+      return "Period saved. The day report will be prepared after every planned period is closed.";
+    if (!(record.reportDelivery?.enabled ?? !record.input.sandbox))
+      return "Day report saved in sandbox. Email delivery is disabled.";
+    const reports = record.outbox.filter((m) => m.type === "day-report");
+    if (!reports.length)
+      return "Day complete. Add report recipients in Coverage & notices to send the summary.";
+    try {
+      await deliverOutbox(
+        record,
+        this.env,
+        async () => {
+          await this.ctx.storage.put("record", record);
+        },
+        fetch,
+        "day-report",
+      );
+    } catch {
+      return "Day report saved. One Gmail delivery is unavailable; check Coverage & notices.";
+    }
+    const sent = record.outbox.filter(
+      (m) => m.type === "day-report" && m.status === "sent",
+    ).length;
+    const uncertain = record.outbox.some(
+      (m) =>
+        m.type === "day-report" && ["unknown", "sending"].includes(m.status),
+    );
+    return uncertain
+      ? `Day report: ${sent} email(s) confirmed. Check Gmail for uncertain delivery; no automatic resend.`
+      : `Day report emailed through One/Gmail to ${sent} recipient(s). See Gmail receipts in Coverage & notices.`;
   }
 }
 type Reservation = {
@@ -585,7 +702,7 @@ export async function preparationRoutes(
     }
   }
   const match = url.pathname.match(
-    /^\/api\/absences\/([a-f0-9-]{36})\/(get|publish|cancel|retry|revise|start|invitation|send-notices)$/,
+    /^\/api\/absences\/([a-f0-9-]{36})\/(get|publish|cancel|retry|revise|start|invitation|send-notices|report-settings)$/,
   );
   if (!match) return undefined;
   const response = await env.ABSENCES.get(

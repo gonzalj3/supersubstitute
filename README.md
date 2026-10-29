@@ -18,11 +18,13 @@ The original Cloudflare address remains stable so existing classroom and QR link
 4. A tested component registry supplies two interactive tools: fraction bars, number lines, place value, arrays, rectangles, cube layers, and error analysis.
 5. The adult previews questions, source evidence, tools, videos, and a Say/Show/Ask/Look-for guide before publication.
 6. Each period starts a persistent classroom with the published questions and tools. Students join via QR code, practice, ask the tutor, or send the substitute a message.
-7. The substitute sees live room progress and prepares a frozen handoff at the end.
+7. The substitute sees live room progress and closes each period to freeze its handoff. Once every planned period is closed, the app combines the day’s results and emails the configured teacher and administrator through One/Gmail.
 
 Teacher questions are preserved, not replaced. Supplied answers are checked. Empty question lists produce 4 generated items. Unsupported objectives and invalid math stop with an explicit error.
 
 Coverage is separate from content generation. The app creates administrator notices and substitute invitations in a visible outbox. Invitation links support acceptance and atomic schedule-conflict checks. For a live day, uncheck Sandbox notifications and use **Coverage & notices → Send pending emails through One**. One sends through the connected Gmail account and returns Gmail message receipts. Sandbox notices stay in the app. Ambiguous or interrupted sends are not retried automatically. Calendar integration is outside this MVP.
+
+**End-of-day delivery:** enter teacher and administrator emails on the absence form, or configure them later under **Coverage & notices → After the day**. The report settings let the teacher or administrator enable report-only delivery independently of sandbox notices. Reports wait for every planned period to close, include recorded progress and follow-up seats, and retain Gmail receipts in the outbox. Repeated closure does not queue another report. Older prepared classrooms are linked when their report settings are saved. Standalone demo rooms without an absence have a local handoff only.
 
 ## State alignment
 

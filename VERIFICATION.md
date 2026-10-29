@@ -70,3 +70,9 @@ Public repository: https://github.com/gonzalj3/supersubstitute. Credentials, loc
 ## One Gmail delivery
 
 39 unit tests pass, including sandbox isolation, checkpoint-before-send, duplicate-click protection, and no blind retry after an ambiguous failure. The server uses the exact send action discovered from One and keeps credentials in Cloudflare secrets. Live deployed delivery passed after recipient approval: one synthetic administrator notice sent to the project owner, Gmail receipt `1a1852bf8942cb64`. A second send request returned zero sent messages. Deployed sandbox-send rejection and unauthenticated-send rejection also passed.
+
+## Automatic end-of-day reporting and header correction
+
+42 unit tests pass. Added report aggregation checks for all-period completion, teacher/administrator recipient deduplication, sandbox isolation, and report-only email delivery. The deployed smoke test passed: unauthorized settings rejected, a frozen classroom handoff posted through a Durable Object alarm to its absence day, two sandbox report messages appeared, and repeated closure did not duplicate them. No external emails were sent during this report smoke test; the prior live One Gmail test verified the send connection.
+
+Fixed the prepared lesson header selector: grade/objective text now updates `.lesson-description` rather than the fraction icon. A deployed browser check confirmed the icon remains `½` and the description bounds stay inside the header; visually inspected screenshot is kept locally in ignored artifacts.

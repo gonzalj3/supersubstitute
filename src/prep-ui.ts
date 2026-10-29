@@ -89,7 +89,7 @@ export function startPreparationUI(
     const lab = location.pathname === "/prep-lab";
     const reviseId = params.get("revise");
     layout(
-      `<div class="prep-page-heading"><span class="eyebrow">${lab ? "MATH PREPARATION LAB" : "BEFORE THE SCHOOL DAY"}</span><h1>${lab ? "A different topic. The same support." : "The day ahead, taken care of."}</h1><p>${lab ? "Run different math objectives through the same live preparation pipeline. Notifications stay in the sandbox outbox." : "Tell us what tomorrow was going to look like. We’ll prepare practice, interactive tools, and a clear guide for the substitute."}</p></div>${lab ? `<section class="scenario-picker"><label for="scenario">Load a test scenario</label><select id="scenario"><option value="">Choose a math scenario…</option>${scenarios.cases.map((c, i) => `<option value="${i}">${esc(c.id.replaceAll("-", " "))}</option>`).join("")}</select><p>Live You.com and Parasail calls. Results expose validation failures; no fake generated packs.</p></section>` : ""}<form id="absence-form" class="absence-form"><section><span class="eyebrow">01 · THE DAY</span><div class="form-grid"><label>Teacher label<input name="teacherLabel" value="Demo teacher" maxlength="80" required></label><label>School<input name="schoolLabel" value="Demo elementary" maxlength="100" required></label><label>Absence date<input type="date" name="date" value="${tomorrow()}" required></label><label>School timezone<select name="timezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label>Grade<select name="grade">${[3, 4, 5, 6, 7, 8].map((g) => `<option value="${g}" ${g === 5 ? "selected" : ""}>Grade ${g}${g > 5 ? " (not supported in this pilot)" : ""}</option>`).join("")}</select></label><label>State<select name="state"><option value="CA">California</option><option value="TX">Texas</option></select></label></div><label>Class periods <small>One per line: name | start | end, in 24-hour school time.</small><textarea name="periods" rows="2" required>Math period | 09:00 | 09:45</textarea></label></section><section><span class="eyebrow">02 · THE LEARNING</span><label>Math topic<select name="topic">${topics()}</select></label><label>What were students going to learn?<textarea name="objective" rows="4" required minlength="8" maxlength="2000" placeholder="Students will add mixed numbers with unlike denominators. They know equivalent fractions, but need help regrouping.">Students will add mixed numbers with unlike denominators and explain the sum with fraction models.</textarea></label><label>Curriculum reference <small>Optional unit, lesson, or public curriculum reference. Do not include private records.</small><input name="curriculumRef" maxlength="500" placeholder="e.g. Grade 5, fraction addition unit"></label><label>Your questions <small>Optional. One numeric expression per line, with an optional answer after =. We preserve your questions and check their answers. Leave empty to generate 4 questions.</small><textarea name="teacherQuestions" rows="3" maxlength="6000" placeholder="2 1/3 + 1 3/4 = 4 1/12"></textarea></label></section><section><span class="eyebrow">03 · COVERAGE</span><div class="prep-info">Administrator notices and substitute invitations are saved in the app. Turn off sandbox mode to enable sending through One and Gmail from Coverage & notices.</div><label>Administrator email <small>Optional recipient for the notification outbox.</small><input type="email" name="administratorEmail" placeholder="administrator@example.com"></label><label>Available substitutes <small>Optional. One per line: label | email. Only add school-approved contacts available for all periods. Availability is school-declared, not a calendar lookup.</small><textarea name="substitutes" rows="2" placeholder="Demo substitute | "></textarea></label><label class="checkbox-label"><input type="checkbox" name="sandbox" checked ${lab ? "disabled" : ""}> Sandbox notifications (no external messages)</label></section><label class="checkbox-label"><input type="checkbox" name="agentReview"> Add specialist agent review (slower; requires the CrewAI service)</label><div class="prep-submit"><button class="primary" id="prepare-button">Prepare my substitute day <span>↗</span></button><p>Generation usually takes 30–120 seconds. You can leave the page; the preparation job continues.</p></div></form>${savedPlans()}`,
+      `<div class="prep-page-heading"><span class="eyebrow">${lab ? "MATH PREPARATION LAB" : "BEFORE THE SCHOOL DAY"}</span><h1>${lab ? "A different topic. The same support." : "The day ahead, taken care of."}</h1><p>${lab ? "Run different math objectives through the same live preparation pipeline. Notifications stay in the sandbox outbox." : "Tell us what tomorrow was going to look like. We’ll prepare practice, interactive tools, and a clear guide for the substitute."}</p></div>${lab ? `<section class="scenario-picker"><label for="scenario">Load a test scenario</label><select id="scenario"><option value="">Choose a math scenario…</option>${scenarios.cases.map((c, i) => `<option value="${i}">${esc(c.id.replaceAll("-", " "))}</option>`).join("")}</select><p>Live You.com and Parasail calls. Results expose validation failures; no fake generated packs.</p></section>` : ""}<form id="absence-form" class="absence-form"><section><span class="eyebrow">01 · THE DAY</span><div class="form-grid"><label>Teacher label<input name="teacherLabel" value="Demo teacher" maxlength="80" required></label><label>School<input name="schoolLabel" value="Demo elementary" maxlength="100" required></label><label>Absence date<input type="date" name="date" value="${tomorrow()}" required></label><label>School timezone<select name="timezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label>Grade<select name="grade">${[3, 4, 5, 6, 7, 8].map((g) => `<option value="${g}" ${g === 5 ? "selected" : ""}>Grade ${g}${g > 5 ? " (not supported in this pilot)" : ""}</option>`).join("")}</select></label><label>State<select name="state"><option value="CA">California</option><option value="TX">Texas</option></select></label></div><label>Class periods <small>One per line: name | start | end, in 24-hour school time.</small><textarea name="periods" rows="2" required>Math period | 09:00 | 09:45</textarea></label></section><section><span class="eyebrow">02 · THE LEARNING</span><label>Math topic<select name="topic">${topics()}</select></label><label>What were students going to learn?<textarea name="objective" rows="4" required minlength="8" maxlength="2000" placeholder="Students will add mixed numbers with unlike denominators. They know equivalent fractions, but need help regrouping.">Students will add mixed numbers with unlike denominators and explain the sum with fraction models.</textarea></label><label>Curriculum reference <small>Optional unit, lesson, or public curriculum reference. Do not include private records.</small><input name="curriculumRef" maxlength="500" placeholder="e.g. Grade 5, fraction addition unit"></label><label>Your questions <small>Optional. One numeric expression per line, with an optional answer after =. We preserve your questions and check their answers. Leave empty to generate 4 questions.</small><textarea name="teacherQuestions" rows="3" maxlength="6000" placeholder="2 1/3 + 1 3/4 = 4 1/12"></textarea></label></section><section><span class="eyebrow">03 · COVERAGE</span><div class="prep-info">Administrator notices and substitute invitations are saved in the app. Turn off sandbox mode to enable sending through One and Gmail from Coverage & notices.</div><label>Teacher email <small>Receives the end-of-day report.</small><input type="email" name="teacherEmail" placeholder="teacher@example.com"></label><label>Administrator email <small>Receives notices and the end-of-day report.</small><input type="email" name="administratorEmail" placeholder="administrator@example.com"></label><label>Available substitutes <small>Optional. One per line: label | email. Only add school-approved contacts available for all periods. Availability is school-declared, not a calendar lookup.</small><textarea name="substitutes" rows="2" placeholder="Demo substitute | "></textarea></label><label class="checkbox-label"><input type="checkbox" name="sandbox" checked ${lab ? "disabled" : ""}> Sandbox notifications (no external messages)</label></section><label class="checkbox-label"><input type="checkbox" name="agentReview"> Add specialist agent review (slower; requires the CrewAI service)</label><div class="prep-submit"><button class="primary" id="prepare-button">Prepare my substitute day <span>↗</span></button><p>Generation usually takes 30–120 seconds. You can leave the page; the preparation job continues.</p></div></form>${savedPlans()}`,
     );
     if (lab)
       document
@@ -147,6 +147,7 @@ export function startPreparationUI(
             objective: String(fd.get("objective")),
             curriculumRef: String(fd.get("curriculumRef")),
             teacherQuestions: String(fd.get("teacherQuestions")),
+            teacherEmail: String(fd.get("teacherEmail")),
             administratorEmail: String(fd.get("administratorEmail")),
             sandbox: lab || fd.get("sandbox") === "on",
             agentReview: fd.get("agentReview") === "on",
@@ -233,6 +234,7 @@ export function startPreparationUI(
             "objective",
             "curriculumRef",
             "teacherQuestions",
+            "teacherEmail",
             "administratorEmail",
           ]) {
             const field = form.elements.namedItem(name) as HTMLInputElement;
@@ -278,9 +280,22 @@ export function startPreparationUI(
         "",
       )}<h3>When students get stuck</h3>${pack.guide.misconceptions.map((m) => `<div class="guide-misconception"><strong>${esc(m.title)}</strong><p>${esc(m.action)}</p></div>`).join("")}<div class="prep-info">Without devices: draw the same model on the board, work one example together, and use the practice questions below on paper.</div><button class="secondary" type="button" data-action="print">Print guide and questions ↓</button></section><section class="prep-card"><span class="eyebrow">VIDEOS FOUND WITH YOU.COM</span><h2>Preview another explanation.</h2><p>Topic-matched search results, not transcript-vetted recommendations. Preview before sharing.</p>${pack.videos.length ? pack.videos.map((v) => `<article class="video-result"><a href="${esc(v.url)}" target="_blank" rel="noopener"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span>${esc(v.title)} ↗</span></a><p>${esc(v.description)}</p></article>`).join("") : "<p>Video discovery was unavailable for this run. You can search from the live classroom.</p>"}</section>`;
   }
-  function coverage(r: AbsenceRecord) {
+  function coverage(r: AbsenceRecord & { role?: string }) {
     const adminToken = localStorage.getItem(`${ownerKey(r.id)}:admin`);
-    return `<section class="prep-card"><span class="eyebrow">COVERAGE IS INDEPENDENT OF PREPARATION</span><h2>${r.assigned ? `${esc(r.assigned.label)} accepted the day.` : "Waiting for a substitute."}</h2><p>${r.input.periods.map((p) => `${esc(p.label)} · ${p.start}–${p.end}`).join("<br>")} · ${esc(r.input.timezone)}</p>${!r.invitations.length ? '<div class="prep-info">No available substitute contacts were supplied. The lesson can still prepare and publish.</div>' : r.invitations.map((i) => `<div class="coverage-row"><div><strong>${esc(i.label)}</strong><span>${esc(i.status)}</span></div><a class="text-button" href="/invitation?id=${r.id}&token=${i.token}" target="_blank" rel="noopener">Open invitation ↗</a></div>`).join("")}${r.assigned ? `<a class="secondary" href="/substitute?id=${r.id}&access=${r.assigned.token}" target="_blank" rel="noopener">Assigned substitute preparation link ↗</a>` : ""}${adminToken ? `<a class="secondary" href="/coverage?id=${r.id}&access=${adminToken}" target="_blank" rel="noopener">Administrator workspace link ↗</a>` : ""}</section><section class="prep-card"><span class="eyebrow">NOTIFICATION OUTBOX</span><h2>Know what actually went out.</h2><p>${r.input.sandbox ? "Sandbox mode: these notices are captured in the app, not sent externally." : "Send pending notices through the connected Gmail account using One. Each recipient receives a private workspace or invitation link. Unknown or interrupted deliveries require checking Gmail before any resend."}</p>${!r.input.sandbox ? '<button class="primary" data-action="send-notices">Send pending emails through One ↗</button>' : ""}${r.outbox.map((m) => `<article class="outbox-message"><div><strong>${esc(m.subject)}</strong><span class="prep-status">${esc(m.status === "awaiting_connection" ? "pending" : m.status.replaceAll("_", " "))}</span></div><small>To: ${esc(m.recipient)}</small><p>${esc(m.text)}</p>${m.providerId ? `<small>Gmail receipt: ${esc(m.providerId)}</small>` : ""}</article>`).join("")}</section>`;
+    const reportSettings = r.reportDelivery ?? {
+      teacherEmail: r.input.teacherEmail ?? "",
+      administratorEmail: r.input.administratorEmail,
+      enabled: !r.input.sandbox,
+    };
+    const reportPanel = `<section class="prep-card"><span class="eyebrow">AFTER THE DAY</span><h2>Keep the teacher and administrator informed.</h2><p>The summary includes recorded progress, sticking points, and follow-up seats across every planned period. It sends when the last period is closed. These settings apply only to report emails.</p><label>Teacher report email<input type="email" id="report-teacher-email" value="${esc(reportSettings.teacherEmail)}"></label><label>Administrator report email<input type="email" id="report-admin-email" value="${esc(reportSettings.administratorEmail)}"></label><label class="checkbox-label"><input type="checkbox" id="report-enabled" ${reportSettings.enabled ? "checked" : ""}> Automatically email the final day report through One/Gmail</label><button type="button" class="secondary" data-action="report-settings">Save report delivery settings</button><p>${Object.keys(r.periodReports ?? {}).length} of ${r.input.periods.length} periods closed.</p>${Object.entries(
+      r.periodReports ?? {},
+    )
+      .map(
+        ([key, p]) =>
+          `<article><strong>${esc(r.input.periods.find((period) => period.id === key)?.label ?? key)}</strong><p>${esc(p.narrative)}</p></article>`,
+      )
+      .join("")}</section>`;
+    return `<section class="prep-card"><span class="eyebrow">COVERAGE IS INDEPENDENT OF PREPARATION</span><h2>${r.assigned ? `${esc(r.assigned.label)} accepted the day.` : "Waiting for a substitute."}</h2><p>${r.input.periods.map((p) => `${esc(p.label)} · ${p.start}–${p.end}`).join("<br>")} · ${esc(r.input.timezone)}</p>${!r.invitations.length ? '<div class="prep-info">No available substitute contacts were supplied. The lesson can still prepare and publish.</div>' : r.invitations.map((i) => `<div class="coverage-row"><div><strong>${esc(i.label)}</strong><span>${esc(i.status)}</span></div><a class="text-button" href="/invitation?id=${r.id}&token=${i.token}" target="_blank" rel="noopener">Open invitation ↗</a></div>`).join("")}${r.assigned ? `<a class="secondary" href="/substitute?id=${r.id}&access=${r.assigned.token}" target="_blank" rel="noopener">Assigned substitute preparation link ↗</a>` : ""}${adminToken ? `<a class="secondary" href="/coverage?id=${r.id}&access=${adminToken}" target="_blank" rel="noopener">Administrator workspace link ↗</a>` : ""}</section><section class="prep-card"><span class="eyebrow">NOTIFICATION OUTBOX</span><h2>Know what actually went out.</h2><p>${r.input.sandbox ? "Sandbox mode: these notices are captured in the app, not sent externally." : "Send pending notices through the connected Gmail account using One. Each recipient receives a private workspace or invitation link. Unknown or interrupted deliveries require checking Gmail before any resend."}</p>${!r.input.sandbox ? '<button class="primary" data-action="send-notices">Send pending emails through One ↗</button>' : ""}${r.outbox.map((m) => `<article class="outbox-message"><div><strong>${esc(m.subject)}</strong><span class="prep-status">${esc(m.status === "awaiting_connection" ? "pending" : m.status.replaceAll("_", " "))}</span></div><small>To: ${esc(m.recipient)}</small><p>${esc(m.text)}</p>${m.providerId ? `<small>Gmail receipt: ${esc(m.providerId)}</small>` : ""}</article>`).join("")}</section>${r.role === "substitute" ? "" : reportPanel}`;
   }
   function renderRecord(r: AbsenceRecord & { role?: string }) {
     record = r;
@@ -414,7 +429,14 @@ export function startPreparationUI(
       return;
     }
     if (
-      !["publish", "retry", "cancel", "start", "send-notices"].includes(action)
+      ![
+        "publish",
+        "retry",
+        "cancel",
+        "start",
+        "send-notices",
+        "report-settings",
+      ].includes(action)
     )
       return;
     if (
@@ -428,11 +450,23 @@ export function startPreparationUI(
     try {
       const result = await request(
         `${base}/${action}`,
-        action === "publish"
-          ? { reviewed: true }
-          : action === "start"
-            ? { periodId: button.dataset.period }
-            : {},
+        action === "report-settings"
+          ? {
+              teacherEmail: document
+                .querySelector<HTMLInputElement>("#report-teacher-email")!
+                .value.trim(),
+              administratorEmail: document
+                .querySelector<HTMLInputElement>("#report-admin-email")!
+                .value.trim(),
+              enabled:
+                document.querySelector<HTMLInputElement>("#report-enabled")!
+                  .checked,
+            }
+          : action === "publish"
+            ? { reviewed: true }
+            : action === "start"
+              ? { periodId: button.dataset.period }
+              : {},
         access ?? undefined,
       );
       if (action === "start") {

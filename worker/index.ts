@@ -1,3 +1,4 @@
+import { summarizePeriod } from "../src/day-report";
 import { DurableObject } from "cloudflare:workers";
 import { searchYouTube } from "../src/video-search";
 import {
@@ -37,6 +38,31 @@ export class Classroom extends DurableObject<Env> {
       this.room = (await ctx.storage.get<Room>("room")) ?? newRoom();
     });
   }
+  async alarm() {
+    const link = this.room.absence,
+      report = this.room.report;
+    if (!link || !report) return;
+    const response = await this.env.ABSENCES.get(
+      this.env.ABSENCES.idFromName(link.id),
+    ).fetch(
+      new Request("https://internal/period-complete", {
+        method: "POST",
+        body: JSON.stringify({
+          periodId: link.periodId,
+          roomId: this.room.lesson?.classroomId,
+          roomToken: this.room.adminToken,
+          report: summarizePeriod(this.room.lesson?.classroomId ?? "", report),
+        }),
+      }),
+    );
+    if (!response.ok)
+      throw new Error("Could not save classroom handoff to the absence day.");
+    const result = (await response.json()) as { delivery: string };
+    await this.ctx.blockConcurrencyWhile(async () => {
+      this.room.report!.delivery = result.delivery;
+      await this.ctx.storage.put("room", this.room);
+    });
+  }
   async fetch(req: Request) {
     // Hold the input gate across read/modify/persist so simultaneous fetches cannot overwrite state.
     return this.ctx.blockConcurrencyWhile(async () => {
@@ -65,10 +91,12 @@ export class Classroom extends DurableObject<Env> {
           if (await this.ctx.storage.get("initialized"))
             return json({ error: "Room already exists" }, 409);
           await this.ctx.storage.put("initialized", true);
+          if (data.absence) this.room.absence = data.absence;
           if (data.pack) {
             const pack = data.pack;
             this.room.items = pack.items;
             this.room.lesson = {
+              classroomId: data.classroomId,
               title: pack.title,
               objective: pack.objective,
               grade: pack.grade,
@@ -87,7 +115,15 @@ export class Classroom extends DurableObject<Env> {
         } else {
           if (!(await this.ctx.storage.get("initialized")))
             return json({ error: "Room not found" }, 404);
-          if (op === "join" && req.method === "POST")
+          if (op === "report-link" && req.method === "POST") {
+            if (!admin) return json({ error: "Teacher session required" }, 401);
+            this.room.absence = data;
+            if (this.room.lesson)
+              this.room.lesson.classroomId = data.classroomId;
+            if (this.room.report)
+              await this.ctx.storage.setAlarm(Date.now() + 100);
+            result = { ok: true };
+          } else if (op === "join" && req.method === "POST")
             result = join(this.room, String(data.label ?? ""), false);
           else if (op === "answer" && req.method === "POST")
             result = answer(this.room, data);
@@ -131,14 +167,25 @@ export class Classroom extends DurableObject<Env> {
                 ...summarize(this.room),
                 integrations: {
                   you: Boolean(this.env.YDC_API_KEY),
+                  crewai: Boolean(this.env.ORCHESTRATOR_URL),
+                  one: Boolean(
+                    this.env.ONE_API_KEY &&
+                    this.env.ONE_GMAIL_CONNECTION_KEY &&
+                    this.env.ONE_GMAIL_ACTION_ID,
+                  ),
                   parasail: Boolean(
                     this.env.PARASAIL_API_KEY && this.env.PARASAIL_MODEL,
                   ),
                 },
               };
-            else if (op === "close" && req.method === "POST")
+            else if (op === "close" && req.method === "POST") {
               result = closeRoom(this.room);
-            else if (op === "simulate" && req.method === "POST") {
+              if (this.room.absence) {
+                this.room.report!.delivery =
+                  "Report saved. Preparing the day summary and checking One/Gmail delivery.";
+                await this.ctx.storage.setAlarm(Date.now() + 100);
+              }
+            } else if (op === "simulate" && req.method === "POST") {
               if (this.room.phase !== "live")
                 throw new Error("This period is closed.");
               if (!this.room.students.some((s) => s.simulated))

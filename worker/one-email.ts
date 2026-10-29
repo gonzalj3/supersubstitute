@@ -28,8 +28,13 @@ export async function deliverOutbox(
   env: OneEmailEnv,
   save: () => Promise<void>,
   fetcher: typeof fetch = fetch,
+  onlyType?: "day-report",
 ) {
-  if (record.input.sandbox)
+  if (
+    onlyType === "day-report"
+      ? !(record.reportDelivery?.enabled ?? !record.input.sandbox)
+      : record.input.sandbox
+  )
     throw new Error(
       "Sandbox notifications cannot be sent. Create a day with sandbox notifications unchecked.",
     );
@@ -41,6 +46,7 @@ export async function deliverOutbox(
     throw new Error("One Gmail delivery is not configured.");
   let sent = 0;
   for (const message of record.outbox) {
+    if (onlyType && message.type !== onlyType) continue;
     if (
       message.status !== "awaiting_connection" ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(message.recipient)
