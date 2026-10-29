@@ -45,15 +45,16 @@ export class Classroom extends DurableObject<Env> {
       try {
         const url = new URL(req.url),
           op = url.pathname.split("/").at(-1);
+        const bodyLimit = op === "create" ? 200000 : 4096;
         if (
           req.method === "POST" &&
-          Number(req.headers.get("content-length") ?? 0) > 4096
+          Number(req.headers.get("content-length") ?? 0) > bodyLimit
         )
           return json({ error: "Request too large" }, 413);
         let data: any = {};
         if (req.method === "POST") {
           const raw = await req.text();
-          if (raw.length > 4096)
+          if (raw.length > bodyLimit)
             return json({ error: "Request too large" }, 413);
           data = JSON.parse(raw);
         }
@@ -201,7 +202,12 @@ export default {
               ? "student help configured"
               : "not connected",
           crewai: env.ORCHESTRATOR_URL ? "service configured" : "not connected",
-          one: "not connected",
+          one:
+            env.ONE_API_KEY &&
+            env.ONE_GMAIL_CONNECTION_KEY &&
+            env.ONE_GMAIL_ACTION_ID
+              ? "Gmail delivery configured"
+              : "not connected",
         },
       });
     if (url.pathname === "/api/rooms" && req.method === "POST") {

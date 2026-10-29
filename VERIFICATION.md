@@ -50,3 +50,23 @@ The visible product name, page title, report filename, package name, and documen
 All 28 tests, both TypeScript checks, and the production build passed. Browser checks confirmed continued access to the existing teacher room and student session. The new header fits a 390 × 844 viewport.
 
 `PRE_CLASS_IMPLEMENTATION_PLAN.md` specifies future absence intake, asset preparation, coverage, and substitute preparation. `data/scenarios/prep-cases.json` contains ten unique sandbox input scenarios and a fixed evaluation clock. JSON structure and local documentation links passed inspection. The plan passed the available technical writing structural checks. These artifacts do not implement the new preparation pipeline or evaluation UI. No administrator or substitute notification was sent.
+
+## Implemented pre-class workflow
+
+This section supersedes the prior plan-only status. The deployed app now has `/plan`, `/absence`, `/substitute`, `/invitation`, `/coverage`, and `/prep-lab` views. Cloudflare Workflows persist generation stages; separate Durable Objects own absence state and coverage reservations. The classroom consumes immutable published packs instead of the fixed fraction set.
+
+- 36 automated tests pass. Both TypeScript checks and the production build pass.
+- TLC checked 240 classroom states, 24 preparation states, and 4 coverage states with no violations. These finite models do not prove all runtime behavior.
+- Live You.com/Parasail generation passed for mixed-number addition, mixed-number subtraction, decimals, rectangle area/perimeter, and multiplication. The initial multiplication run required adult source review. Compact fraction runs produced four questions and two tools with exact quoted-source matches.
+- Published decimal, rectangle, and multiplication packs passed the actual classroom handoff: room initialization, correct question/pack identity, a student answer, and a frozen report.
+- Coverage HTTP checks passed atomic concurrent acceptance, idempotent retry, cross-timezone conflict rejection, cancellation, and reservation release. No model calls or external messages occurred during those checks.
+- The actual CrewAI Flow and designer/reviewer Crew produced a four-question lesson through Parasail in a local authenticated-service check. The service is exposed through an authenticated demo tunnel and depends on this host remaining awake. The fast demo path uses direct structured design; additional CrewAI review is optional.
+- Initial compact division and volume generation hit provider rate limits. Provider pacing and longer backoff now exist. Those topics have components and math tests, but are not the critical path for the submission video.
+- Deterministic validation failures no longer consume repeated automatic retries. The adult sees an actionable review/error state and can revise the absence.
+- One Gmail is now connected. Explicit email delivery is implemented with sandbox isolation, persisted pre-send state, provider receipts, and no automatic retry of uncertain writes. Calendar integration remains outside the MVP.
+
+Public repository: https://github.com/gonzalj3/supersubstitute. Credentials, local service state, test tokens, and screenshots remain excluded.
+
+## One Gmail delivery
+
+39 unit tests pass, including sandbox isolation, checkpoint-before-send, duplicate-click protection, and no blind retry after an ambiguous failure. The server uses the exact send action discovered from One and keeps credentials in Cloudflare secrets. Live deployed delivery passed after recipient approval: one synthetic administrator notice sent to the project owner, Gmail receipt `1a1852bf8942cb64`. A second send request returned zero sent messages. Deployed sandbox-send rejection and unauthenticated-send rejection also passed.

@@ -170,8 +170,8 @@ export function buildPack(
       );
   if (!items.length || items.length > 12)
     throw new Error("The lesson needs 1–12 valid practice questions.");
-  if (!lines.length && (items.length < 6 || items.length > 8))
-    throw new Error("Generated practice must contain six to eight questions.");
+  if (!lines.length && items.length !== 4)
+    throw new Error("Generated practice must contain four questions.");
   const allowed: Record<Topic, string[]> = {
     "fractions-add": ["add"],
     "fractions-subtract": ["subtract"],
@@ -229,8 +229,19 @@ export function buildPack(
   const source = sources.find(
     (s) => s.id === draft.standard.sourceId && s.kind === "standard",
   );
-  const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-  const quote = draft.standard.evidenceQuote.trim();
+  const normalize = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/<[^>]+>/g, " ")
+      .replace(/[*_`]/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const quote = draft.standard.evidenceQuote
+    .trim()
+    .split(/\s+/)
+    .slice(0, 25)
+    .join(" ");
   const alignment = Boolean(
     source?.contentVerified &&
     quote.length >= 20 &&
@@ -245,11 +256,11 @@ export function buildPack(
       ];
   const problem = items[0],
     kinds: LessonPack["tools"][number]["kind"][] = topic.startsWith("fractions")
-      ? ["fraction-bars", "number-line", "error-detective"]
+      ? ["fraction-bars", "number-line"]
       : topic === "decimals"
-        ? ["place-value", "number-line", "error-detective"]
+        ? ["place-value", "number-line"]
         : topic === "multiplication" || topic === "division"
-          ? ["array", "number-line", "error-detective"]
+          ? ["array", "number-line"]
           : topic === "volume"
             ? ["cubes", "error-detective"]
             : ["rectangle", "error-detective"];
@@ -299,6 +310,10 @@ export function buildPack(
   };
 }
 export function publishPack(record: AbsenceRecord, reviewed: boolean) {
+  if (!reviewed)
+    throw new Error(
+      "Review the questions, tools, and cited guidance before publishing.",
+    );
   if (
     !["ready", "needs_review"].includes(record.phase) ||
     !record.pack ||
@@ -325,7 +340,9 @@ export function publishPack(record: AbsenceRecord, reviewed: boolean) {
     record.outbox.push({
       id: `${record.revision}:pack-ready:${record.assigned.id}`,
       type: "pack-ready",
-      recipient: record.assigned.label,
+      recipient:
+        record.input.substitutes.find((s) => s.id === record.assigned?.id)
+          ?.email || record.assigned.label,
       subject: `Preparation ready · ${record.pack.title}`,
       text: `Your lesson pack is ready for ${record.input.date}. Use the preparation link to rehearse before class.`,
       status: record.input.sandbox ? "sandbox" : "awaiting_connection",

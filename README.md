@@ -15,14 +15,14 @@ The original Cloudflare address remains stable so existing classroom and QR link
 1. A teacher supplies a date, periods, grade, state, curriculum note, and optional questions.
 2. A Cloudflare Workflow uses You.com to discover official state evidence and retrieve source content.
 3. Parasail creates a structured lesson draft. The exact math engine independently calculates every answer.
-4. A tested component registry supplies 2–3 interactive tools: fraction bars, number lines, place value, arrays, rectangles, cube layers, and error analysis.
+4. A tested component registry supplies two interactive tools: fraction bars, number lines, place value, arrays, rectangles, cube layers, and error analysis.
 5. The adult previews questions, source evidence, tools, videos, and a Say/Show/Ask/Look-for guide before publication.
 6. Each period starts a persistent classroom with the published questions and tools. Students join via QR code, practice, ask the tutor, or send the substitute a message.
 7. The substitute sees live room progress and prepares a frozen handoff at the end.
 
-Teacher questions are preserved, not replaced. Supplied answers are checked. Empty question lists produce 6–8 generated items. Unsupported objectives and invalid math stop with an explicit error.
+Teacher questions are preserved, not replaced. Supplied answers are checked. Empty question lists produce 4 generated items. Unsupported objectives and invalid math stop with an explicit error.
 
-Coverage is separate from content generation. The app creates administrator notices and substitute invitations in a visible outbox. Invitation links support acceptance and atomic schedule-conflict checks. **External emails are not sent: One credentials and write-connected email/calendar accounts are still required.** Sandbox notices never claim external delivery.
+Coverage is separate from content generation. The app creates administrator notices and substitute invitations in a visible outbox. Invitation links support acceptance and atomic schedule-conflict checks. For a live day, uncheck Sandbox notifications and use **Coverage & notices → Send pending emails through One**. One sends through the connected Gmail account and returns Gmail message receipts. Sandbox notices stay in the app. Ambiguous or interrupted sends are not retried automatically. Calendar integration is outside this MVP.
 
 ## State alignment
 
@@ -37,9 +37,9 @@ Live generation checks passed for decimal operations and rectangle area/perimete
 | You.com | Official state evidence, Contents retrieval, and YouTube video discovery |
 | Parasail | Structured lesson design and student-scoped question help |
 | CrewAI | Authenticated Python Flow and a designer/reviewer Crew in `orchestrator/`; separate service configuration required |
-| One | Notification outbox and integration boundary; external delivery is not connected |
+| One | Live Gmail delivery of administrator notices, substitute invitations, and preparation links; persisted delivery receipts and duplicate-send protection |
 
-Cloudflare Workflows can run the edge preparation pipeline without the Python service. When `ORCHESTRATOR_URL` and `ORCHESTRATOR_SECRET` are configured, lesson design uses the CrewAI service. The preview reports the actual orchestrator used.
+Cloudflare Workflows can run the edge preparation pipeline without the Python service. The fast demo path uses direct structured design. Select **Add specialist agent review** to use the CrewAI service when `ORCHESTRATOR_URL` and `ORCHESTRATOR_SECRET` are configured. The preview reports the actual orchestrator used.
 
 ## Local run
 
@@ -55,6 +55,8 @@ npm run dev
 Open http://localhost:8787. Wrangler emulates the Worker, Durable Objects, and Workflow. Re-run the dev command after frontend changes. Local QR links work only on this computer; use the deployed URL for phones.
 
 Required secrets: `YDC_API_KEY`, `PARASAIL_API_KEY`, `PARASAIL_MODEL`, and `PARASAIL_PREP_MODEL`. Verify model IDs against Parasail's live `/v1/models` catalog. A separate non-reasoning preparation model avoids consuming the structured-output budget on reasoning.
+
+Live email requires server-only `ONE_API_KEY`, `ONE_GMAIL_CONNECTION_KEY`, and `ONE_GMAIL_ACTION_ID`. Resolve the connection and send action with One’s list/find tools, then upload these as Worker secrets. Never expose the One key to the browser.
 
 `.env.local` is ignored but Wrangler uses `.dev.vars`. If your key is called `YOU_API_KEY`, map it to `YDC_API_KEY`. Never use `VITE_*` for secrets.
 
@@ -108,6 +110,8 @@ This is a pseudonymous hackathon pilot. Demo capability links are not district S
 The original fixed fraction demo remains available from the home page. New preparation jobs produce distinct published packs for separate periods. A running classroom stays pinned to its pack. Private absence reasons and student records are unnecessary for preparation.
 
 ## Design and submission
+
+Use [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the exact view transitions and a 2–3 minute recording script. Near the deadline, use a completed mixed-number, decimal, or rectangle lesson and avoid parallel generation runs.
 
 - [Product brief](SUPERSUBSTITUTE_BRIEF.md)
 - [Pre-class workflow plan](PRE_CLASS_IMPLEMENTATION_PLAN.md)

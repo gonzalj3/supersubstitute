@@ -63,6 +63,7 @@ export const AbsenceInputSchema = z.object({
     .max(8)
     .default([]),
   sandbox: z.boolean().default(true),
+  agentReview: z.boolean().default(false),
 });
 export type AbsenceInput = z.infer<typeof AbsenceInputSchema>;
 export type EvidenceSource = {
@@ -166,8 +167,10 @@ export type OutboxMessage = {
   recipient: string;
   subject: string;
   text: string;
-  status: "sandbox" | "awaiting_connection" | "sent" | "unknown";
+  status: "sandbox" | "awaiting_connection" | "sending" | "sent" | "unknown";
   createdAt: string;
+  providerId?: string;
+  sentAt?: string;
 };
 export type Invitation = {
   id: string;

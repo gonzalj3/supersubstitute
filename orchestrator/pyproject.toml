@@ -2,7 +2,12 @@
 name = "supersubstitute-orchestrator"
 version = "0.1.0"
 requires-python = ">=3.12,<3.14"
-dependencies = ["crewai==1.13.0", "fastapi>=0.115,<1", "uvicorn>=0.32,<1", "httpx>=0.28,<1"]
+dependencies = [
+    "crewai[litellm]==1.13.0",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.32,<1",
+    "httpx>=0.28,<1",
+]
 
 [tool.uv]
 package = false

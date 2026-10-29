@@ -1,3 +1,4 @@
+import { deliverOutbox, type OneEmailEnv } from "./one-email";
 import {
   DurableObject,
   WorkflowEntrypoint,
@@ -13,13 +14,14 @@ import {
   detectTopic,
 } from "../src/preparation";
 import type { AbsenceRecord, LessonPack } from "../src/prep-types";
+import { parseTeacherProblem } from "../src/math-engine";
 import {
   researchLesson,
   designLesson,
   lessonVideos,
   type ProviderEnv,
 } from "./prep-providers";
-export interface PrepEnv extends ProviderEnv {
+export interface PrepEnv extends ProviderEnv, OneEmailEnv {
   ABSENCES: DurableObjectNamespace;
   COVERAGE: DurableObjectNamespace;
   ROOMS: DurableObjectNamespace;
@@ -233,12 +235,19 @@ export class Preparation extends DurableObject<PrepEnv> {
             { error: "Teacher or administrator action required" },
             403,
           );
+        if (op === "send-notices") {
+          const result = await deliverOutbox(record, this.env, async () => {
+            await this.ctx.storage.put("record", record);
+          });
+          return json(result);
+        }
         if (op === "publish") {
           publishPack(record, Boolean(data.reviewed));
           await this.ctx.storage.put("record", record);
           return json({ ok: true });
         }
         if (op === "cancel") {
+          if (record.phase === "canceled") return json({ ok: true });
           record.phase = "canceled";
           record.invitations.forEach((i) => (i.status = "expired"));
           record.events.push({
@@ -246,6 +255,20 @@ export class Preparation extends DurableObject<PrepEnv> {
             phase: "canceled",
             message:
               "Absence canceled. Existing room records remain available.",
+          });
+          record.outbox.push({
+            id: `${record.revision}:canceled`,
+            type: "cancellation",
+            recipient:
+              record.input.substitutes.find(
+                (s) => s.id === record?.assigned?.id,
+              )?.email ||
+              record.input.administratorEmail ||
+              "Administrator workspace",
+            subject: `Absence canceled · ${record.input.date}`,
+            text: `The absence for ${record.input.teacherLabel} at ${record.input.schoolLabel} was canceled. Invitations are no longer valid.`,
+            status: record.input.sandbox ? "sandbox" : "awaiting_connection",
+            createdAt: new Date().toISOString(),
           });
           await this.ctx.storage.put("record", record);
           await this.env.COVERAGE.get(
@@ -332,6 +355,28 @@ export class Coverage extends DurableObject<PrepEnv> {
     return this.ctx.blockConcurrencyWhile(async () => {
       const data = (await req.json()) as any,
         op = new URL(req.url).pathname;
+      if (op === "/budget") {
+        const jobs =
+          (await this.ctx.storage.get<Record<string, number>>("jobs")) ?? {};
+        const now = Date.now();
+        let scheduled = jobs[data.id];
+        if (!scheduled) {
+          scheduled = Math.max(
+            now,
+            (await this.ctx.storage.get<number>("next")) ?? 0,
+          );
+          jobs[data.id] = scheduled;
+          for (const [id, time] of Object.entries(jobs))
+            if (time < now - 3600000) delete jobs[id];
+          await this.ctx.storage.put({
+            jobs,
+            next: scheduled + (this.env.ORCHESTRATOR_URL ? 30000 : 15000),
+          });
+        }
+        return json({
+          seconds: Math.max(0, Math.ceil((scheduled - now) / 1000)),
+        });
+      }
       let rows = (await this.ctx.storage.get<Reservation[]>("rows")) ?? [];
       if (op === "/release") {
         rows = rows.filter((r) => r.id !== data.id);
@@ -402,10 +447,23 @@ export class LessonPreparation extends WorkflowEntrypoint<
         return;
       try {
         detectTopic(record.input);
+        const lines = record.input.teacherQuestions
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (lines.length > 12)
+          throw new Error("Supply at most 12 teacher questions.");
+        lines.forEach(parseTeacherProblem);
       } catch (e) {
-        await mark("unsupported", (e as Error).message, {
-          error: (e as Error).message,
-        });
+        await mark(
+          /Unsupported/.test((e as Error).message)
+            ? "unsupported"
+            : "needs_review",
+          (e as Error).message,
+          {
+            error: (e as Error).message,
+          },
+        );
         return;
       }
       const sources = await step.do(
@@ -425,10 +483,23 @@ export class LessonPreparation extends WorkflowEntrypoint<
           return researchLesson(record, this.env);
         },
       );
+      const delay = await step.do("reserve-generation-slot", async () => {
+        const response = await this.env.COVERAGE.get(
+          this.env.COVERAGE.idFromName("generation-budget"),
+        ).fetch(
+          new Request("https://internal/budget", {
+            method: "POST",
+            body: JSON.stringify({ id: `${id}:${revision}` }),
+          }),
+        );
+        return ((await response.json()) as { seconds: number }).seconds;
+      });
+      if (delay > 0)
+        await step.sleep("wait-for-generation-slot", `${delay} seconds`);
       const designed = await step.do(
         "lesson-design",
         {
-          retries: { limit: 1, delay: "10 seconds", backoff: "constant" },
+          retries: { limit: 1, delay: "60 seconds", backoff: "constant" },
           timeout: "3 minutes",
         },
         async () => {
@@ -447,31 +518,36 @@ export class LessonPreparation extends WorkflowEntrypoint<
         { timeout: "45 seconds" },
         async () => lessonVideos(record, this.env),
       );
-      await step.do("validate-and-save", async () => {
-        if (
-          !(await mark(
-            "validation",
-            "Checking exact answers, supported tools, source quotes, and lesson consistency.",
-          ))
-        )
-          return;
-        const latest = await current();
-        if (latest.revision !== revision || latest.phase === "canceled") return;
-        const pack = buildPack(
-          record,
-          designed.draft,
-          sources,
-          videos,
-          designed.orchestrator,
-        );
-        await mark(
-          pack.validation.alignment ? "ready" : "needs_review",
-          pack.validation.alignment
-            ? "Lesson pack is ready for adult preview and publication."
-            : "Math and tools passed; inspect and confirm state alignment before publication.",
-          { pack },
-        );
-      });
+      await step.do(
+        "validate-and-save",
+        { retries: { limit: 0, delay: "1 second" }, timeout: "30 seconds" },
+        async () => {
+          if (
+            !(await mark(
+              "validation",
+              "Checking exact answers, supported tools, source quotes, and lesson consistency.",
+            ))
+          )
+            return;
+          const latest = await current();
+          if (latest.revision !== revision || latest.phase === "canceled")
+            return;
+          const pack = buildPack(
+            record,
+            designed.draft,
+            sources,
+            videos,
+            designed.orchestrator,
+          );
+          await mark(
+            pack.validation.alignment ? "ready" : "needs_review",
+            pack.validation.alignment
+              ? "Lesson pack is ready for adult preview and publication."
+              : "Math and tools passed; inspect and confirm state alignment before publication.",
+            { pack },
+          );
+        },
+      );
     } catch (error) {
       await step.do("record-failure", async () =>
         mark("failed", "Preparation stopped with an actionable error.", {
@@ -509,7 +585,7 @@ export async function preparationRoutes(
     }
   }
   const match = url.pathname.match(
-    /^\/api\/absences\/([a-f0-9-]{36})\/(get|publish|cancel|retry|revise|start|invitation)$/,
+    /^\/api\/absences\/([a-f0-9-]{36})\/(get|publish|cancel|retry|revise|start|invitation|send-notices)$/,
   );
   if (!match) return undefined;
   const response = await env.ABSENCES.get(
