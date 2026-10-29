@@ -1,0 +1,30 @@
+{
+  "name": "supersubstitute",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build && wrangler dev --port 8787",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:smoke": "node scripts/smoke.mjs",
+    "format": "prettier --write src worker tests scripts/smoke.mjs *.json *.jsonc *.ts index.html",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.worker.json",
+    "deploy": "npm run build && wrangler deploy",
+    "cf:whoami": "wrangler whoami",
+    "model:check": "bash scripts/check-model.sh"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "@types/qrcode": "^1.5.5",
+    "prettier": "^3.9.10",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest",
+    "wrangler": "latest"
+  }
+}

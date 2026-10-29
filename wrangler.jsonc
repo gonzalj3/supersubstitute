@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "understudy-classroom",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-28",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOMS", "class_name": "Classroom" },
+      { "name": "ABSENCES", "class_name": "Preparation" },
+      { "name": "COVERAGE", "class_name": "Coverage" },
+    ],
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Classroom"] },
+    { "tag": "v2", "new_sqlite_classes": ["Preparation", "Coverage"] },
+  ],
+  "workflows": [
+    {
+      "name": "supersubstitute-preparation",
+      "binding": "PREP_JOBS",
+      "class_name": "LessonPreparation",
+    },
+  ],
+  "observability": { "enabled": true },
+}

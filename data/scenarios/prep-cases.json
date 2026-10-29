@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "status": "planned-evaluation-inputs-not-generated-packs",
+  "mode": "sandbox",
+  "evaluationClock": "2026-10-28T15:30:00-07:00",
+  "defaults": {
+    "schoolId": "demo-school",
+    "teacherLabel": "Demo teacher",
+    "absenceDate": "2026-10-29",
+    "schoolTimezone": "America/Los_Angeles",
+    "periods": [{ "label": "Math period", "start": "09:00", "end": "09:45" }],
+    "state": "CA",
+    "questionPolicy": "generate_if_missing",
+    "teacherQuestions": [],
+    "notificationSink": "sandbox_outbox",
+    "substitutePool": []
+  },
+  "cases": [
+    {
+      "id": "ca-grade5-mixed-add",
+      "input": {
+        "grade": 5,
+        "objective": "Students will add mixed numbers with unlike denominators. Connect equivalent fractions to a visual model."
+      },
+      "expected": {
+        "outcome": "ready_after_validation",
+        "questionOrigin": "generated",
+        "toolCount": [2, 3],
+        "toolFamilies": ["fraction-bars", "number-line", "error-detective"],
+        "evidenceJurisdiction": "CA",
+        "coverage": "unfilled"
+      }
+    },
+    {
+      "id": "tx-grade5-mixed-add",
+      "input": {
+        "grade": 5,
+        "state": "TX",
+        "schoolTimezone": "America/Chicago",
+        "objective": "Students will add mixed numbers with unlike denominators. Use the representations required by Texas guidance."
+      },
+      "expected": {
+        "outcome": "ready_after_validation",
+        "toolCount": [2, 3],
+        "evidenceJurisdiction": "TX",
+        "forbiddenEvidenceReuse": "ca-grade5-mixed-add"
+      }
+    },
+    {
+      "id": "ca-grade5-fraction-regroup",
+      "input": {
+        "grade": 5,
+        "objective": "Students will subtract mixed numbers with unlike denominators and regroup a whole when necessary."
+      },
+      "expected": {
+        "outcome": "ready_after_validation",
+        "toolCount": [2, 3],
+        "toolFamilies": ["fraction-bars", "number-line", "error-detective"],
+        "requiredChecks": ["quantity_conservation", "exact_rational_answers"]
+      }
+    },
+    {
+      "id": "ca-grade5-decimal-operations",
+      "input": {
+        "grade": 5,
+        "objective": "Students will add and subtract decimals to hundredths through place value and regroup steps."
+      },
+      "expected": {
+        "outcome": "ready_after_component_release",
+        "toolCount": [2, 3],
+        "toolFamilies": ["place-value", "number-line", "error-detective"],
+        "requiredChecks": ["exact_decimal_scale", "base_ten_exchange"]
+      }
+    },
+    {
+      "id": "ca-grade3-equal-groups",
+      "input": {
+        "grade": 3,
+        "objective": "Students will connect multiplication and division through equal groups and arrays within 100."
+      },
+      "expected": {
+        "outcome": "ready_after_component_release",
+        "toolCount": [2, 3],
+        "toolFamilies": ["arrays", "number-line", "error-detective"],
+        "requiredChecks": ["equal_group_counts", "inverse_operations"]
+      }
+    },
+    {
+      "id": "ca-grade4-area-perimeter",
+      "input": {
+        "grade": 4,
+        "objective": "Students will distinguish area from perimeter of rectangles with whole-number side lengths."
+      },
+      "expected": {
+        "outcome": "ready_after_component_release",
+        "toolCount": [2, 3],
+        "toolFamilies": ["rectangle-builder", "error-detective"],
+        "requiredChecks": [
+          "area_equals_length_times_width",
+          "perimeter_equals_twice_sum",
+          "unit_dimensions"
+        ]
+      }
+    },
+    {
+      "id": "ca-grade5-volume",
+      "input": {
+        "grade": 5,
+        "objective": "Students will find the volume of rectangular prisms through unit cubes and rectangular layers."
+      },
+      "expected": {
+        "outcome": "ready_after_component_release",
+        "toolCount": [2, 3],
+        "toolFamilies": ["unit-cubes", "error-detective"],
+        "requiredChecks": ["cube_count", "cubic_units", "bounded_scene_size"]
+      }
+    },
+    {
+      "id": "teacher-questions-preserved",
+      "input": {
+        "grade": 5,
+        "objective": "Practice adding mixed numbers with unlike denominators.",
+        "questionPolicy": "preserve_only",
+        "teacherQuestions": [
+          { "id": "teacher-1", "prompt": "2 1/3 + 1 3/4", "answer": "4 1/12" },
+          { "id": "teacher-2", "prompt": "1 5/6 + 2 1/2", "answer": "4 1/3" }
+        ]
+      },
+      "expected": {
+        "outcome": "ready_after_validation",
+        "questionCount": 2,
+        "questionOrigin": "teacher",
+        "preserveIdsAndWording": true,
+        "extraQuestions": 0,
+        "toolCount": [2, 3]
+      }
+    },
+    {
+      "id": "invalid-teacher-question",
+      "input": {
+        "grade": 5,
+        "objective": "Practice fraction addition.",
+        "questionPolicy": "preserve_only",
+        "teacherQuestions": [{ "id": "invalid-1", "prompt": "1/0 + 1/2" }]
+      },
+      "expected": {
+        "outcome": "needs_review",
+        "validationError": "zero_denominator",
+        "published": false,
+        "silentReplacement": false
+      }
+    },
+    {
+      "id": "unsupported-elementary-pilot-topic",
+      "input": {
+        "grade": 8,
+        "objective": "Students will solve systems of simultaneous linear equations."
+      },
+      "expected": {
+        "outcome": "unsupported",
+        "published": false,
+        "unrelatedFractionTool": false
+      }
+    }
+  ]
+}
