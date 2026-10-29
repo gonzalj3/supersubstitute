@@ -17,3 +17,6 @@ __pycache__/
 artifacts/
 .one/
 .onerc
+
+# Personal recording notes
+/DEMO_SCRIPT.md
